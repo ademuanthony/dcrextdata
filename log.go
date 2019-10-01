@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"os"
 	"sort"
@@ -50,6 +51,7 @@ var (
 	redditLog  = backendLog.Logger("REDD")
 	webLog     = backendLog.Logger("WEBL")
 	syncLog    = backendLog.Logger("SYNC")
+	cacheLog    = backendLog.Logger("CACH")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -63,6 +65,7 @@ var subsystemLoggers = map[string]slog.Logger{
 	"REDD": redditLog,
 	"WEBL": webLog,
 	"SYNC": syncLog,
+	"CACH": cacheLog,
 }
 
 func init() {
@@ -74,6 +77,7 @@ func init() {
 	commstats.UseLogger(redditLog)
 	web.UseLogger(webLog)
 	datasync.UseLogger(syncLog)
+	cache.UseLogger(cacheLog)
 }
 
 // initLogRotator initializes the logging rotater to write logs to logFile and

@@ -7,7 +7,10 @@ package postgres
 //go:generate sqlboiler --wipe psql --no-hooks --no-auto-timestamps
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
+	"github.com/raedahgroup/dcrextdata/cache"
 )
 
 type PgDb struct {
@@ -28,4 +31,24 @@ func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
 func (pg *PgDb) Close() error {
 	log.Trace("Closing postgresql connection")
 	return pg.db.Close()
+}
+
+func (pg *PgDb) RegisterCharts(charts *cache.ChartData) {
+	charts.AddUpdater(cache.ChartUpdater{
+		Tag:      "mempool chart",
+		Fetcher: func(data *cache.ChartData) (rows *sql.Rows, i func(), e error) {
+
+		},
+		Appender: nil,
+	})
+}
+
+func (pgb *PgDb) chartBlocks(charts *cache.ChartData) (*sql.Rows, func(), error) {
+	ctx, cancel := context.WithTimeout(pgb.ctx, pgb.queryTimeout)
+
+	rows, err := retrieveChartBlocks(ctx, pgb.db, charts)
+	if err != nil {
+		return nil, cancel, fmt.Errorf("chartBlocks: %v", pgb.replaceCancelError(err))
+	}
+	return rows, cancel, nil
 }

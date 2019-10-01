@@ -6,7 +6,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -139,6 +141,15 @@ func _main(ctx context.Context) error {
 	if err = createTablesAndIndex(db); err != nil {
 		return err
 	}
+
+	// For consistency with StakeDatabase, a non-negative height is needed.
+	mempoolCount, err := db.MempoolCount(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		log.Errorf("Cannot fetch mempool count, %s", err.Error())
+	}
+
+	charts := cache.NewChartData(ctx, uint32(mempoolCount), netParams(cfg.DcrdNetworkType))
+	db.RegisterCharts(charts)
 
 	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync, cfg.SyncInterval)
 

@@ -11,10 +11,13 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/raedahgroup/dcrextdata/cache"
+	"github.com/raedahgroup/dcrextdata/postgres/models"
+	"time"
 )
 
 type PgDb struct {
-	db *sql.DB
+	db           *sql.DB
+	queryTimeout time.Duration
 }
 
 func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
@@ -36,19 +39,32 @@ func (pg *PgDb) Close() error {
 func (pg *PgDb) RegisterCharts(charts *cache.ChartData) {
 	charts.AddUpdater(cache.ChartUpdater{
 		Tag:      "mempool chart",
-		Fetcher: func(data *cache.ChartData) (rows *sql.Rows, i func(), e error) {
-
-		},
-		Appender: nil,
+		Fetcher: pg.chartMempool,
+		Appender: appendChartMempool,
 	})
 }
 
-func (pgb *PgDb) chartBlocks(charts *cache.ChartData) (*sql.Rows, func(), error) {
-	ctx, cancel := context.WithTimeout(pgb.ctx, pgb.queryTimeout)
+func (pg *PgDb) chartMempool(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
-	rows, err := retrieveChartBlocks(ctx, pgb.db, charts)
+	charts.Height()
+	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(time.Unix(int64(charts.MempoolTime()), 0))).All(ctx, pg.db)
 	if err != nil {
-		return nil, cancel, fmt.Errorf("chartBlocks: %v", pgb.replaceCancelError(err))
+		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
 	}
-	return rows, cancel, nil
+	return mempoolSlice, cancel, nil
+}
+
+// Append the results from retrieveChartBlocks to the provided ChartData.
+// This is the Appender half of a pair that make up a cache.ChartUpdater.
+func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) error {
+	mempoolSlice := mempoolSliceInt.(models.MempoolSlice)
+	chartsMempool := charts.Mempool
+	for _, mempoolData := range mempoolSlice {
+		chartsMempool.Time = append(chartsMempool.Time, uint64(mempoolData.Time.Unix()))
+		chartsMempool.Fees = append(chartsMempool.Fees, mempoolData.TotalFee.Float64)
+		chartsMempool.TxCount = append(chartsMempool.TxCount, uint64(mempoolData.NumberOfTransactions.Int))
+		chartsMempool.Size = append(chartsMempool.Size, uint64(mempoolData.Size.Int))
+	}
+	return nil
 }

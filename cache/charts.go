@@ -5,7 +5,6 @@ package cache
 
 import (
 	"context"
-	"database/sql"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -15,8 +14,7 @@ import (
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
-	"github.com/decred/dcrdata/semver"
-	"github.com/decred/dcrdata/txhelpers/v3"
+	"github.com/decred/dcrdata/txhelpers/v2"
 )
 
 // Keys for specifying chart data type.
@@ -93,7 +91,7 @@ const (
 // cacheVersion helps detect when the cache data stored has changed its
 // structure or content. A change on the cache version results to recomputing
 // all the charts data a fresh thereby making the cache to hold the latest changes.
-var cacheVersion = semver.NewSemver(6, 0, 0)
+var cacheVersion = NewSemver(6, 0, 0)
 
 // versionedCacheData defines the cache data contents to be written into a .gob file.
 type versionedCacheData struct {
@@ -391,9 +389,9 @@ type ChartUpdater struct {
 	Tag string
 	// In addition to the sql.Rows and an error, the fetcher should return a
 	// context.CancelFunc if appropriate, else a dummy.
-	Fetcher func(*ChartData) (*sql.Rows, func(), error)
+	Fetcher func(ctx context.Context, charts *ChartData) (interface{}, func(), error)
 	// The Appender will be run under mutex lock.
-	Appender func(*ChartData, *sql.Rows) error
+	Appender func(charts *ChartData, recordSlice interface{}) error
 }
 
 // ChartData is a set of data used for charts. It provides methods for
@@ -689,7 +687,7 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 
 // Load loads chart data from the gob file at the specified path and performs an
 // update.
-func (charts *ChartData) Load(cacheDumpPath string) error {
+func (charts *ChartData) Load(ctx context.Context, cacheDumpPath string) error {
 	t := time.Now()
 	defer func() {
 		log.Debugf("Completed the initial chart load and update in %f s",
@@ -704,7 +702,7 @@ func (charts *ChartData) Load(cacheDumpPath string) error {
 
 	// Bring the charts up to date.
 	log.Infof("Updating charts data...")
-	return charts.Update()
+	return charts.Update(ctx)
 }
 
 // Dump dumps a ChartGobject to a gob file at the given path.
@@ -718,8 +716,8 @@ func (charts *ChartData) Dump(dumpPath string) {
 }
 
 // TriggerUpdate triggers (*ChartData).Update.
-func (charts *ChartData) TriggerUpdate(_ string, _ uint32) error {
-	if err := charts.Update(); err != nil {
+func (charts *ChartData) TriggerUpdate(ctx context.Context, _ string, _ uint32) error {
+	if err := charts.Update(ctx); err != nil {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
 	}
@@ -771,6 +769,13 @@ func (charts *ChartData) stateID() uint64 {
 // should be used under at least a (*ChartData).RLock.
 func (charts *ChartData) validState(stateID uint64) bool {
 	return charts.stateID() == stateID
+}
+
+// MempoolTime is the time of the latest mempool appended to the chart
+func (charts *ChartData) MempoolTime() uint64 {
+	charts.mtx.RLock()
+	defer charts.mtx.RUnlock()
+	return (charts.Mempool.Time[len(charts.Mempool.Time)-1])
 }
 
 // Height is the height of the blocks data. Data is assumed to be complete and
@@ -827,10 +832,10 @@ func (charts *ChartData) AddUpdater(updater ChartUpdater) {
 // Update refreshes chart data by calling the ChartUpdaters sequentially. The
 // Update is abandoned with a warning if stateID changes while running a Fetcher
 // (likely due to a new update starting during a query).
-func (charts *ChartData) Update() error {
+func (charts *ChartData) Update(ctx context.Context) error {
 	for _, updater := range charts.updaters {
 		stateID := charts.StateID()
-		rows, cancel, err := updater.Fetcher(charts)
+		rows, cancel, err := updater.Fetcher(ctx, charts)
 		if err != nil {
 			err = fmt.Errorf("error encountered during charts %s update. aborting update: %v", updater.Tag, err)
 		} else {

@@ -19,6 +19,7 @@ func (s *Server) loadTemplates() {
 		"mempool.html":     "web/views/mempool.html",
 		"propagation.html": "web/views/propagation.html",
 		"community.html":   "web/views/community.html",
+		"nodes.html":       "web/views/nodes.html",
 	}
 
 	for i, v := range tpls {

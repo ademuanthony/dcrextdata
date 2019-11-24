@@ -51,7 +51,7 @@ var (
 		Bittrexusd: NewBittrexUSDCollector,
 		Poloniex:   NewPoloniexCollector,
 		// Bleutrade:  NewBleutradeCollector,
-		Binance:    NewBinanceCollector,
+		Binance: NewBinanceCollector,
 	}
 
 	bittrexIntervals = map[float64]string{

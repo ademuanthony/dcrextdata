@@ -299,3 +299,12 @@ export function formatDate (date, format) {
   dateFormatted = dateFormatted.replace('ss', seconds).replace('sss', milliseconds)
   return dateFormatted
 }
+
+export function getNumberOfPages (recordsCount, pageSize) {
+  const rem = recordsCount % pageSize
+  let pageCount = (recordsCount - rem) / pageSize
+  if (rem > 0) {
+    pageCount += 1
+  }
+  return pageCount
+}

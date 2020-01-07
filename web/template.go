@@ -20,6 +20,7 @@ func (s *Server) loadTemplates() {
 		"propagation.html": "web/views/propagation.html",
 		"community.html":   "web/views/community.html",
 		"nodes.html":       "web/views/nodes.html",
+		"node.html":       "web/views/node.html",
 	}
 
 	for i, v := range tpls {
@@ -61,6 +62,9 @@ func templateFuncMap() template.FuncMap {
 		},
 		"formatUnixTime": func(timestamp int64) string {
 			return time.Unix(timestamp, 0).Format(time.UnixDate)
+		},
+		"unixTimeAgo": func(timestamp int64) string {
+			return time.Since(time.Unix(timestamp, 0)).String()
 		},
 		"strListContains": func(stringList []string, needle string) bool {
 			for _, value := range stringList {

@@ -1677,7 +1677,7 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.render("nodes.html", map[string]interface{}{
+	data := map[string]interface{}{
 		"selectedViewOption": viewOption,
 		"pageSizeSelector":   pageSizeSelector,
 		"page":               page,
@@ -1690,7 +1690,9 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		"nextTimestamp":      nextTimestamp,
 		"peerCount":          peerCount,
 		"query":              r.FormValue("q"),
-	}, w)
+	}
+
+	s.render("nodes.html", data, w)
 }
 
 // /api/snapshots

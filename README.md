@@ -1,6 +1,6 @@
 # dcrextdata
 
-[![Build Status](https://img.shields.io/travis/decred/dcrdata.svg)](https://travis-ci.org/raedahgroup/dcrextdata)
+[![Build Status](https://img.shields.io/travis/decred/dcrdata.svg)](https://travis-ci.org/raedahgroup/planetdecred)
 [![Go Report Card](https://goreportcard.com/badge/github.com/decred/dcrdata)](https://goreportcard.com/report/github.com/planetdecred/dcrextdata)
 [![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
@@ -10,8 +10,7 @@
 To run **dcrextdata** on your machine you will need the following to be setup.
 - `Go` 1.11
 - `Postgresql`
-- `Yarn`
-- `Nodejs`
+- `Nodejs.` Node.js is only used as a build tool, and is not used at runtime
 - `Dcrd`
 
 ## Setting Up Dcrextdata 
@@ -33,13 +32,10 @@ To run **dcrextdata** on your machine you will need the following to be setup.
   - Just open the command line interface and type `psql` then execute the sql statements below to create a user and database.
 ```sql
     CREATE USER {username} WITH PASSWORD '{password}' CREATEDB;
-    CREATE DATABASE {databasename} OWNER {user};
+    CREATE DATABASE {databasename} OWNER {username};
 ```
 **Install Nodejs**
 * Instructions on how to install `Nodejs` can be found [here](https://nodejs.org/en/download/)
-
-**Install Yarn**
-* Yarn is a package used for building the http frontend You can get `yarn` from [here](https://yarnpkg.com/lang/en/docs/install/)
 
 **Install Dcrd**
 * Running `dcrd` synchronized to the current best block on the network.
@@ -68,8 +64,8 @@ Run `export GO111MODULE=on` in terminal (for Mac/Linux) or `setx GO111MODULE on`
 Building will place the `dcrextdata` binary in your working directory while install will place the binary in $GOPATH/bin.
 
 #### Building http front-end
-* From your project directory, type `cd web/public/app` using command line, rn `yarn install` when its done installing packages, 
-run `yarn build`.
+* From your project directory, type `cd web/public/app` using command line, rn `npm install` when its done installing packages, 
+run `npm run build`.
 
 ### Step 4. Configuration
 `dcrextdata` can be configured via command-line options or a config file located in the same diretcory as the executable. Start with the sample config file:

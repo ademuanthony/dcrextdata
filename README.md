@@ -1,7 +1,7 @@
 # dcrextdata
 
 [![Build Status](https://img.shields.io/travis/decred/dcrdata.svg)](https://travis-ci.org/raedahgroup/dcrextdata)
-[![Go Report Card](https://goreportcard.com/badge/github.com/decred/dcrdata)](https://goreportcard.com/report/github.com/raedahgroup/dcrextdata)
+[![Go Report Card](https://goreportcard.com/badge/github.com/decred/dcrdata)](https://goreportcard.com/report/github.com/planetdecred/dcrextdata)
 [![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
     dcrextdata is a standalone program for collecting additional info about the decred cryptocurrency like ticker and orderbook data from various exchanges. 
@@ -53,12 +53,12 @@ To run **dcrextdata** on your machine you will need the following to be setup.
 
 ***Linux***
 ```bash
-  git clone https://github.com/raedahgroup/dcrextdata $GOPATH/src/github.com/raedahgroup/dcrextdata
+  git clone https://github.com/planetdecred/dcrextdata $GOPATH/src/github.com/planetdecred/dcrextdata
  ```
  
  ***Windows***
 ```
-  git clone https://github.com/raedahgroup/dcrextdata %GOPATH%/src/github.com/raedahgroup/dcrextdata
+  git clone https://github.com/planetdecred/dcrextdata %GOPATH%/src/github.com/planetdecred/dcrextdata
 ```
 
 ### Step 3. Building the source code.
@@ -95,4 +95,4 @@ See the CONTRIBUTING.md file for details. Here's an overview:
 2. Create a branch for your work (`git checkout -b my-work master`)
 3. Write your codes
 4. Commit and push to the newly created branch on your forked repo
-5. Create a [pull request](https://github.com/raedahgroup/dcrextdata/pulls) from your new branch to this repo's master branch
+5. Create a [pull request](https://github.com/planetdecred/dcrextdata/pulls) from your new branch to this repo's master branch

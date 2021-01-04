@@ -397,13 +397,17 @@ func runHourlyBinDataUpdate(ctx context.Context, db *postgres.PgDb) {
 	nextHour = time.Date(nextHour.Year(), nextHour.Month(), nextHour.Day(), nextHour.Hour(), 0, 0, 0, nextHour.Location())
 	// wait till next hour
 	time.Sleep(nextHour.Sub(now))
-	updateBinDate(ctx, db)
+	if err := updateBinDate(ctx, db); err != nil {
+		log.Error(err)
+	}
 	ticker := time.NewTicker(60 * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			updateBinDate(ctx, db)
+			if err := updateBinDate(ctx, db); err != nil {
+				log.Error(err)
+			}
 		case <-ctx.Done():
 			return
 		}
@@ -414,24 +418,24 @@ func updateBinDate(ctx context.Context, db *postgres.PgDb) error {
 	if err := db.UpdateMempoolAggregateData(ctx); err != nil {
 		return fmt.Errorf("Error in initial mempool bin update, %s", err.Error())
 	}
-	// if err := db.UpdatePropagationData(ctx); err != nil {
-	// 	return fmt.Errorf("Error in initial propagation data update, %s", err.Error())
-	// }
-	// if err := db.UpdateBlockBinData(ctx); err != nil {
-	// 	return fmt.Errorf("Error in initial block data update, %s", err.Error())
-	// }
-	// if err := db.UpdateVoteTimeDeviationData(ctx); err != nil {
-	// 	return fmt.Errorf("Error in initial vote receive time deviation data update, %s", err.Error())
-	// }
-	// if err := db.UpdatePowChart(ctx); err != nil {
-	// 	return fmt.Errorf("Error in initial PoW bin update, %s", err.Error())
-	// }
-	// if err := db.UpdateVspChart(ctx); err != nil {
-	// 	return fmt.Errorf("Error in initial VSP bin update, %s", err.Error())
-	// }
-	// if err := db.UpdateSnapshotNodesBin(ctx); err != nil {
-	// 	return fmt.Errorf("Error in initial network snapshot bin update, %s", err.Error())
-	// }
+	if err := db.UpdatePropagationData(ctx); err != nil {
+		return fmt.Errorf("Error in initial propagation data update, %s", err.Error())
+	}
+	if err := db.UpdateBlockBinData(ctx); err != nil {
+		return fmt.Errorf("Error in initial block data update, %s", err.Error())
+	}
+	if err := db.UpdateVoteTimeDeviationData(ctx); err != nil {
+		return fmt.Errorf("Error in initial vote receive time deviation data update, %s", err.Error())
+	}
+	if err := db.UpdatePowChart(ctx); err != nil {
+		return fmt.Errorf("Error in initial PoW bin update, %s", err.Error())
+	}
+	if err := db.UpdateVspChart(ctx); err != nil {
+		return fmt.Errorf("Error in initial VSP bin update, %s", err.Error())
+	}
+	if err := db.UpdateSnapshotNodesBin(ctx); err != nil {
+		return fmt.Errorf("Error in initial network snapshot bin update, %s", err.Error())
+	}
 	return nil
 }
 

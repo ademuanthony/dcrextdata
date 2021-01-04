@@ -847,7 +847,7 @@ func GenerateHourBin(dates, heights ChartUints) (hours, hourHeights ChartUints, 
 
 	// the index that begins new data.
 	offset := 0
-	// If there is day or more worth of new data, append to the Days zoomSet by
+	// If there is an hour or more worth of new data, append to the hours zoomSet by
 	// finding the first and last+1 blocks of each new day, and taking averages
 	// or sums of the blocks in the interval.
 	if end > start+AnHour {

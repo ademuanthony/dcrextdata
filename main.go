@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strings"
+	"time"
 
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
@@ -242,27 +243,11 @@ func _main(ctx context.Context) error {
 		}
 		return db, nil
 	})
-	if err = db.UpdateMempoolAggregateData(ctx); err != nil {
-		return fmt.Errorf("Error in initial mempool bin update, %s", err.Error())
+	if err := updateBinDate(ctx, db); err != nil {
+		return err
 	}
-	if err = db.UpdatePropagationData(ctx); err != nil {
-		return fmt.Errorf("Error in initial propagation data update, %s", err.Error())
-	}
-	if err = db.UpdateBlockBinData(ctx); err != nil {
-		return fmt.Errorf("Error in initial block data update, %s", err.Error())
-	}
-	if err = db.UpdateVoteTimeDeviationData(ctx); err != nil {
-		return fmt.Errorf("Error in initial vote receive time deviation data update, %s", err.Error())
-	}
-	if err = db.UpdatePowChart(ctx); err != nil {
-		return fmt.Errorf("Error in initial PoW bin update, %s", err.Error())
-	}
-	if err = db.UpdateVspChart(ctx); err != nil {
-		return fmt.Errorf("Error in initial VSP bin update, %s", err.Error())
-	}
-	if err = db.UpdateSnapshotNodesBin(ctx); err != nil {
-		return fmt.Errorf("Error in initial network snapshot bin update, %s", err.Error())
-	}
+
+	go runHourlyBinDataUpdate(ctx, db)
 
 	// http server method
 	if strings.ToLower(cfg.HttpMode) == "true" || cfg.HttpMode == "1" {
@@ -402,6 +387,52 @@ func _main(ctx context.Context) error {
 	}
 
 	return ctx.Err()
+}
+
+// runHourlyBinDataUpdate will try and update bin data at the begining of every hour
+// it should be ran as a goroutine
+func runHourlyBinDataUpdate(ctx context.Context, db *postgres.PgDb) {
+	now := time.Now()
+	nextHour := now.Add(60 * time.Minute)
+	nextHour = time.Date(nextHour.Year(), nextHour.Month(), nextHour.Day(), nextHour.Hour(), 0, 0, 0, nextHour.Location())
+	// wait till next hour
+	time.Sleep(nextHour.Sub(now))
+	updateBinDate(ctx, db)
+	ticker := time.NewTicker(60 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			updateBinDate(ctx, db)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func updateBinDate(ctx context.Context, db *postgres.PgDb) error {
+	if err := db.UpdateMempoolAggregateData(ctx); err != nil {
+		return fmt.Errorf("Error in initial mempool bin update, %s", err.Error())
+	}
+	// if err := db.UpdatePropagationData(ctx); err != nil {
+	// 	return fmt.Errorf("Error in initial propagation data update, %s", err.Error())
+	// }
+	// if err := db.UpdateBlockBinData(ctx); err != nil {
+	// 	return fmt.Errorf("Error in initial block data update, %s", err.Error())
+	// }
+	// if err := db.UpdateVoteTimeDeviationData(ctx); err != nil {
+	// 	return fmt.Errorf("Error in initial vote receive time deviation data update, %s", err.Error())
+	// }
+	// if err := db.UpdatePowChart(ctx); err != nil {
+	// 	return fmt.Errorf("Error in initial PoW bin update, %s", err.Error())
+	// }
+	// if err := db.UpdateVspChart(ctx); err != nil {
+	// 	return fmt.Errorf("Error in initial VSP bin update, %s", err.Error())
+	// }
+	// if err := db.UpdateSnapshotNodesBin(ctx); err != nil {
+	// 	return fmt.Errorf("Error in initial network snapshot bin update, %s", err.Error())
+	// }
+	return nil
 }
 
 func netParams(netType string) *chaincfg.Params {
